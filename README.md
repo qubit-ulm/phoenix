@@ -269,10 +269,9 @@ pytest tests
 
 Current top-level tests cover ADAA selection and backend array operations.
 
-## Release cleanup
+## Cleanup
 
-Before preparing a release tree, move generated artifacts out of the tracked
-working tree:
+You can easily move generated artifacts out of the tracked working tree:
 
 ```bash
 make release-dump-dry
@@ -280,29 +279,7 @@ make release-dump
 ```
 
 This moves generated build folders, cache folders, compiled Python artifacts,
-Sphinx output, demo output media, and similar non-release files aside while
-leaving shipped assets such as `design/logo.png` and `doc/_static/*` in place.
-
-For fun, you can also run:
-
-```bash
-make file-statistics
-```
-
-## Release-stage testing strategy
-
-The release-stage suite is split into five layers:
-
-1. Generic symbolic core: keymaps, instruction trees, instruction variables,
-   environments, and library registration.
-2. ADAA arithmetic: copy, zero, elementwise add/subtract, and scalar
-   multiplication/division across backend-owned ADAA families.
-3. Backend generation matrix: every backend lowers a basic instruction group
-   and a mapapply routine for real, imag, and complex assignment families.
-4. Backend runtime smoke: configured runtime backends execute a stable wrapped
-   routine and compare the result against a NumPy reference.
-5. Configuration smoke: dotted configuration access, backend initialization,
-   status reporting, and `phoenix-config --test`.
+Sphinx output, demo output media, and similar non-release files aside.
 
 ## Building the documentation
 
