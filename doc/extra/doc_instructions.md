@@ -1,0 +1,12 @@
+# The Instruction Module
+
+Instructions are the building blocks of Routines. They are predefined parametrized microoperations that a routine is made from. These microoperations are hierarchically categorized into specific operations, that can later be mapped out into compilable code.
+
+As an example, consider a rescale-operation of the form `y[i] = a * x[j]`, where `a`, `i` and `j` are parameters in this instruction, but the way they are combined with y and x is defined by the "rescale"-instruction type.
+Consider a set of multiple microoperations of this form - you have just performed a matrix-vector multiplication `y = A x`, where all the `a` correspond to the non-zero entries `A[i,j]` of the matrix A. This specific form of representing a sparse matrix by the row- and column-indices of the non-zero elements is referred to a coordinate form, and we have just demonstrated an implementation of it for a constant matrix A.
+
+Such microoperations can be arranged in hierarchies, where any specification goes down the hierarchy into a lower level. The rescale transform `y[i] = a x[j]` is a special case of the affine transform `y[i] = a x[j] + b`. The lookup `y[i] = x[j]` is a trivial rescale operation, and for certain choices of `i`'s and `j`'s, the lookup can be called a permutation, a fact that might later add performance-relevant information. We could go further - the affine transform is a polynomial of degree one, which itself is a multinomial in only one variable.
+
+The call to a routine itself can also be considered a micro-operation. The call might be issued at multiple locations in a data structure, which can be realized by introducing optional offsets to the indices.
+
+Instructions can be grouped. This has several advantages, an obvious one is readability. The groupings can also help to avoid racing conditions when the implementation is to be parallelized. Another potential advantage might be performance - certain memory access patterns have proven beneficial for memory lookup speed. As an example, GPUs have specific data access patterns where data is loaded in grouped chunks of consecutive values. On a CPU, certain groupings might be more cache-efficient. And on multi-threaded machines, a specific number of groups might help to save some execution time.

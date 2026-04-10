@@ -1,0 +1,17 @@
+{
+  "logging": {
+    "level": "INFO",
+    "stdout": false
+  },
+  "paths": {
+    "build_log_name": "build.log",
+    "build_root": "phoenix_build",
+    "doc_suffix": "_doc.txt",
+    "makefile_name": "Makefile",
+    "manifest_name": "library_manifest.json"
+  },
+  "runtime": {
+    "num_processors": 1,
+    "zero_tolerance": 1e-14
+  }
+}

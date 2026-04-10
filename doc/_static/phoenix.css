@@ -1,0 +1,49 @@
+/* Improve wrapping of long autodoc signatures in the API reference. */
+
+/* Give the left-hand navigation tree more space in the nature theme. */
+
+div.bodywrapper {
+    margin-left: 320px;
+}
+
+div.sphinxsidebar {
+    width: 300px;
+}
+
+div.sphinxsidebarwrapper {
+    padding-right: 0.75rem;
+}
+
+dl.py dt,
+dl.py .sig,
+dl.py .sig-name,
+dl.py .sig-prename,
+dl.py .sig-object,
+dl.py .sig-param,
+dl.py .sig-return,
+dl.py code.descname,
+dl.py code.descclassname {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+dl.py > dt {
+    display: block;
+    max-width: 100%;
+}
+
+dl.py dd {
+    margin-left: 1.5rem;
+    clear: both;
+}
+
+.section dl.py > dt {
+    padding-right: 0.5rem;
+}
+
+table.docutils td,
+table.docutils th {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}

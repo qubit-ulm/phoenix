@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use PHOENIX in research, please cite this software."
+title: "PHOENIX"
+type: software
+abstract: >-
+  PHOENIX (Parallel Hybrid Operations for Enhanced Numerical Implementations
+  and eXecutions) is a symbolic code-generation framework for structured
+  numerical operations across multiple execution backends.
+authors:
+  - family-names: "Kost"
+    given-names: "Matthias"
+version: "1.0"
+license: "BSD-3"
+repository-code: "https://github.com/qubit-ulm/phoenix"
+url: "https://github.com/qubit-ulm/phoenix"
+keywords:
+  - code generation
+  - numerical computing
+  - symbolic computation
+  - high-performance computing
+  - fortran
+  - c
+  - cuda

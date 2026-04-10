@@ -1,0 +1,16 @@
+{
+  "backend": "python",
+  "enabled": true,
+  "executables": {
+    "python": "/home/matthias/VENV/DEFAULT/bin/python"
+  },
+  "resource": {
+    "device": "cpu",
+    "parallel_model": "python"
+  },
+  "support": {
+    "build_target": "support",
+    "makefile": "/home/matthias/Code/phoenix/phoenix/fgen/backends/python/support/Makefile",
+    "root": "/home/matthias/Code/phoenix/phoenix/fgen/backends/python/support"
+  }
+}

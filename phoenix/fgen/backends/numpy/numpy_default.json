@@ -1,0 +1,16 @@
+{
+  "backend": "numpy",
+  "enabled": true,
+  "executables": {
+    "python": "/home/matthias/VENV/DEFAULT/bin/python"
+  },
+  "resource": {
+    "device": "cpu",
+    "parallel_model": "numpy"
+  },
+  "support": {
+    "build_target": "support",
+    "makefile": "/home/matthias/Code/phoenix/phoenix/fgen/backends/numpy/support/Makefile",
+    "root": "/home/matthias/Code/phoenix/phoenix/fgen/backends/numpy/support"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "backend": "plain",
+  "enabled": true,
+  "resource": {
+    "device": "symbolic",
+    "parallel_model": "none"
+  },
+  "support": {
+    "build_target": "support",
+    "makefile": "/home/matthias/Code/phoenix/phoenix/fgen/backends/plain/support/Makefile",
+    "root": "/home/matthias/Code/phoenix/phoenix/fgen/backends/plain/support"
+  }
+}
