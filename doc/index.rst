@@ -40,10 +40,10 @@ The project has three main layers:
    architecture
    backends
    configuration
-   citation
    testing
    tutorials
    examples
+   citation
    api/index
 
 
