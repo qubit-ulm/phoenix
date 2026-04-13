@@ -158,6 +158,8 @@ class MakeFileManager:
             cwd=cwd,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
 
     def filter_double_space(self, generatorlike):
