@@ -9,6 +9,8 @@ abstract: >-
 authors:
   - family-names: "Kost"
     given-names: "Matthias"
+  - family-names: "Plenio"
+    given-names: "Martin B."
 version: "1.0"
 license: "BSD-3"
 repository-code: "https://github.com/qubit-ulm/phoenix"

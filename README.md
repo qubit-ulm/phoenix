@@ -305,7 +305,7 @@ repository metadata in [CITATION.cff](CITATION.cff).
 Plain-text reference:
 
 ```text
-Matthias Kost. PHOENIX: Parallel Hybrid Operations for Enhanced Numerical
+Matthias Kost, Martin B. Plenio. PHOENIX: Parallel Hybrid Operations for Enhanced Numerical
 Implementations and eXecutions. Version 1.0. https://github.com/qubit-ulm/phoenix.
 ```
 
