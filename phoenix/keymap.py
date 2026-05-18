@@ -5,8 +5,8 @@
 # Author:      Matthias Kost
 # Contact:     matthias.kost@uni-ulm.de
 # Generated:   21/08/2024
-# Last Update: 18/03/2026, 12:47
-# Version:     0.1.23
+# Last Update: 18/05/2026, 17:24
+# Version:     0.1.25
 #
 #################################################end#of#autoheader#do#not#modify
 """
@@ -818,8 +818,19 @@ class KeyMap(Domain):
         if self.is_locked:
             raise ValueError("Cannot add to a locked keymap")
 
+        pointer = self
+        if isinstance(keylike, Key):
+            parent_key_list = list(keylike._unchain())
+            for parent, key in parent_key_list[:-1]:
+                if parent is not None:
+                    assert pointer == parent
+                pointer = pointer[key]
+            parent, keylike = parent_key_list[-1]
+            if parent is not None:
+                assert pointer == parent
+
         # use a kseg from this map
-        kseg = self._to_tagged_keyseg(keylike)
+        kseg = pointer._to_tagged_keyseg(keylike)
 
         if domain is None:
             # default thing to add is an entry
@@ -829,7 +840,7 @@ class KeyMap(Domain):
         if no_override:
             if kseg in self:
                 raise KeyError(f"Key '{kseg}' already exists")
-        self._link(kseg, domain)
+        pointer._link(kseg, domain)
         return self
 
     def _link(self, kseg: _KeySegment, domain: Domain) -> Self:
