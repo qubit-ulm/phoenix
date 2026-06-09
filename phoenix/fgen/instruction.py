@@ -5,8 +5,8 @@
 # Author:      Matthias Kost
 # Contact:     matthias.kost@uni-ulm.de
 # Generated:   01/10/2024
-# Last Update: 17/03/2026, 10:20
-# Version:     0.1.119
+# Last Update: 09/06/2026, 17:39
+# Version:     0.1.120
 #
 #################################################end#of#autoheader#do#not#modify
 """
@@ -408,7 +408,9 @@ class Instruction:
             self._sort_key = self._get_sort_key()
         return self._sort_key
 
-    def update_sort_key(self, function: Callable[[Instruction], Any] | None = None) -> None:
+    def update_sort_key(
+        self, function: Callable[[Instruction], Any] | None = None
+    ) -> None:
         """
         Recompute the cached sort key.
 
@@ -455,7 +457,9 @@ class Instruction:
     def __eq__(self, other):
         return self.itype == other.itype
 
-    def __deepcopy__(self, memo: dict[int, weakref.ReferenceType] | None = None):
+    def __deepcopy__(
+        self, memo: dict[int, weakref.ReferenceType] | None = None
+    ):
         """Implement subclass-specific deep-copy support."""
         raise NotImplementedError("subclasses must implement this method")
 
@@ -907,7 +911,9 @@ class InstructionGroup(Instruction, ftype="group"):
 
     def __init__(
         self,
-        instructions: Iterable[Instruction | list[Instruction] | GeneratorType],
+        instructions: Iterable[
+            Instruction | list[Instruction] | GeneratorType
+        ],
         itype: str | None = None,
     ):
         """
@@ -1244,6 +1250,7 @@ class ParametricInstructionGroup(InstructionGroup, ftype="pgroup"):
         self,
         instructions: Iterable[Instruction],
         generating_instruction_class: type[LeafInstruction] | None = None,
+        itype: str | None = None,
     ):
         """
         Initialize a group whose children all share one leaf instruction type.
@@ -1265,16 +1272,20 @@ class ParametricInstructionGroup(InstructionGroup, ftype="pgroup"):
             raise TypeError(
                 "generating instruction class must be a leaf class"
             )
+        if itype is None:
+            itype = generating_instruction_class._ftype
         super().__init__(
             [
                 instruction.as_type(generating_instruction_class)
                 for instruction in instructions
             ],
-            itype=generating_instruction_class._ftype,
+            itype=itype,
         )
         self._gen_instr_class = generating_instruction_class
 
-    def generate_instruction(self, *args: Any, **kwargs: Any) -> LeafInstruction:
+    def generate_instruction(
+        self, *args: Any, **kwargs: Any
+    ) -> LeafInstruction:
         """
         Create a new instruction using the group's generating class.
 
@@ -1371,7 +1382,9 @@ class ContentInstruction(Instruction, ftype="content"):
         return self._content
 
     def __deepcopy__(
-        self, memo: dict[int, weakref.ReferenceType] | None = None, **kwargs: Any
+        self,
+        memo: dict[int, weakref.ReferenceType] | None = None,
+        **kwargs: Any,
     ) -> Instruction:
         """Return a deep copy of the wrapper and its nested content."""
         if memo is None:
@@ -1516,7 +1529,9 @@ class EnvironmentInstruction(ContentInstruction, ftype="environment"):
         return payload
 
     def __deepcopy__(
-        self, memo: dict[int, weakref.ReferenceType] | None = None, **kwargs: Any
+        self,
+        memo: dict[int, weakref.ReferenceType] | None = None,
+        **kwargs: Any,
     ) -> Instruction:
         """Return a deep copy of the environment wrapper."""
         if memo is None:
@@ -1615,7 +1630,8 @@ class OffsetEnvironmentInstruction(EnvironmentInstruction, ftype="offset"):
         self,
         content: Instruction,
         *,
-        offsets: dict[type[InstructionVariable], InstructionVariable] | None = None,
+        offsets: dict[type[InstructionVariable], InstructionVariable]
+        | None = None,
         itype: str | None = None,
     ):
         """
@@ -1721,7 +1737,9 @@ class MapApplyInstruction(ContentInstruction, ftype="map"):
         return len(self._content) * len(self._environments)
 
     def __deepcopy__(
-        self, memo: dict[int, weakref.ReferenceType] | None = None, **kwargs: Any
+        self,
+        memo: dict[int, weakref.ReferenceType] | None = None,
+        **kwargs: Any,
     ) -> Instruction:
         """Return a deep copy of the map instruction and all environments."""
         if memo is None:
@@ -1837,7 +1855,9 @@ class VariationInstruction(ContentInstruction, ftype="variation"):
     versions do not interact anywhere, implying some wiggle room for safe parallelization
     """
 
-    def __init__(self, content: Instruction, key: str, itype: str | None = None):
+    def __init__(
+        self, content: Instruction, key: str, itype: str | None = None
+    ):
         """
         Initialize a variation selector with one named variant.
 
@@ -1909,9 +1929,7 @@ class CallInstruction(
         """
         merged_mapping = {}
         if mapping is not None:
-            merged_mapping.update(
-                self._normalize_mapping(routine, mapping)
-            )
+            merged_mapping.update(self._normalize_mapping(routine, mapping))
         super().__init__(
             routine=routine,
             mapping=merged_mapping,
