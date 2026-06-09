@@ -5,8 +5,8 @@
 # Author:      Matthias Kost
 # Contact:     matthias.kost@uni-ulm.de
 # Generated:   03/03/2025
-# Last Update: 13/03/2026, 13:54
-# Version:     0.1.303
+# Last Update: 09/06/2026, 18:11
+# Version:     0.1.341
 #
 #################################################end#of#autoheader#do#not#modify
 """
@@ -94,6 +94,7 @@ from .codecontainer import (
     LoopCaptureContainer,
     EmptyLines,
 )
+from .array_analysis import IsLinearIET
 
 
 class Builder(BuilderSegment, identifier="GENERIC"):
@@ -130,16 +131,20 @@ class Builder(BuilderSegment, identifier="GENERIC"):
         if first.output_config != second.output_config:
             return False
         if isinstance(first, SymbolicOffset):
-            return (
-                getattr(first, "_origin", None) == getattr(second, "_origin", None)
-                and getattr(first, "_value", None) == getattr(second, "_value", None)
+            return getattr(first, "_origin", None) == getattr(
+                second, "_origin", None
+            ) and getattr(first, "_value", None) == getattr(
+                second, "_value", None
             )
-        return getattr(first, "_value", None) == getattr(second, "_value", None)
+        return getattr(first, "_value", None) == getattr(
+            second, "_value", None
+        )
 
     @staticmethod
     def _is_parametric_constant(value) -> bool:
         """Return whether a varying offset value can be stored in a lookup table."""
         return isinstance(value, (int, str))
+
     _DTYPE_MAP = {"C": "c128", "F": "f64", "I": "i32"}
 
     _supp_instr_handler: Dict[type, Callable] = {}
@@ -854,7 +859,7 @@ class Builder(BuilderSegment, identifier="GENERIC"):
             name="_".join([name, "choice"]),
             generating=local_class,
             dtype=dtype,
-            autorequire=True,
+            autorequire=False,
         )
 
         return external_values, local_choice
@@ -877,6 +882,8 @@ class Builder(BuilderSegment, identifier="GENERIC"):
         for var_num, (target_class, values) in enumerate(
             offset_values.items()
         ):
+            islinear = IsLinearIET()
+
             var_char = chr(ord("a") + var_num)
             name = f"offs_{target_class.__name__}_{var_char}"
 
@@ -886,6 +893,8 @@ class Builder(BuilderSegment, identifier="GENERIC"):
                 "i32",
                 context=context,
             )
+
+            context.container.requires(local_choice)
 
             symbolic_environment.update(
                 target_class,
@@ -898,15 +907,24 @@ class Builder(BuilderSegment, identifier="GENERIC"):
                 ),
             )
 
-            context.container.requires(value_depot)
-            context.container.requires(local_choice)
+            if expression := islinear.apply_test(
+                values, variable=multi_frame_variable.local
+            ):
+                yield self.create_assignment(
+                    local_choice,
+                    expression,
+                    context,
+                    buildargs,
+                )
 
-            yield self.create_assignment(
-                local_choice,
-                value_depot.at(multi_frame_variable),
-                context,
-                buildargs,
-            )
+            else:
+                context.container.requires(value_depot)
+                yield self.create_assignment(
+                    local_choice,
+                    value_depot.at(multi_frame_variable),
+                    context,
+                    buildargs,
+                )
 
         yield EmptyLines(context=context, **buildargs)
 
@@ -984,15 +1002,24 @@ class Builder(BuilderSegment, identifier="GENERIC"):
             assert offset_variable_templates[key] is not None
 
             plain_offsets = [
-                offset.plain_offsets for offset in offset_objects if offset is not None
+                offset.plain_offsets
+                for offset in offset_objects
+                if offset is not None
             ]
             offset_length = len(plain_offsets[0])
-            assert all(len(this_offsets) == offset_length for this_offsets in plain_offsets)
-            assert all(len(values) == offset_length for values in evaluated_offsets)
+            assert all(
+                len(this_offsets) == offset_length
+                for this_offsets in plain_offsets
+            )
+            assert all(
+                len(values) == offset_length for values in evaluated_offsets
+            )
 
             dimension_specs = []
             for dim in range(offset_length):
-                dim_plain_offsets = [this_offsets[dim] for this_offsets in plain_offsets]
+                dim_plain_offsets = [
+                    this_offsets[dim] for this_offsets in plain_offsets
+                ]
                 if all(
                     self._offsets_equivalent(dim_plain_offsets[0], candidate)
                     for candidate in dim_plain_offsets[1:]
@@ -1003,7 +1030,9 @@ class Builder(BuilderSegment, identifier="GENERIC"):
                     continue
 
                 dim_values = [values[dim] for values in evaluated_offsets]
-                if not all(self._is_parametric_constant(value) for value in dim_values):
+                if not all(
+                    self._is_parametric_constant(value) for value in dim_values
+                ):
                     raise TypeError(
                         "ParametricInstructionGroup encountered a varying symbolic "
                         f"offset in generating key {key!r} at offset position {dim}. "

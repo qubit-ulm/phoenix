@@ -5,8 +5,8 @@
 # Author:      Matthias Kost
 # Contact:     matthias.kost@uni-ulm.de
 # Generated:   23/03/2026
-# Last Update: 23/03/2026, 13:22
-# Version:     0.0.160
+# Last Update: 09/06/2026, 18:07
+# Version:     0.0.168
 #
 #################################################end#of#autoheader#do#not#modify
 
@@ -42,12 +42,14 @@ class IndexExpressionTest:
     def identifier(self):
         return self._identifier
 
-    def apply_test(self, input_array):
+    def apply_test(self, input_array, variable=None):
+        if variable is None:
+            variable = "x"
         if not input_array:
             raise InconclusiveTestResultException(self, "empty input")
-        return self._apply_test(input_array)
+        return self._apply_test(input_array, variable=variable)
 
-    def _apply_test(self, input_array):
+    def _apply_test(self, input_array, variable=None):
         raise NotImplementedError("must be implemented in subclass")
 
 
@@ -57,7 +59,7 @@ class IsConstantIET(IndexExpressionTest):
     def __init__(self, name=None, **kwargs):
         super().__init__(name or "is_constant", **kwargs)
 
-    def _apply_test(self, input_array):
+    def _apply_test(self, input_array, variable):
         assert len(input_array) > 0
         first = input_array[0]
         if len(input_array) > 1:
@@ -73,12 +75,12 @@ class IsCountIET(IndexExpressionTest):
     def __init__(self, name=None, **kwargs):
         super().__init__(name or "is_count", **kwargs)
 
-    def _apply_test(self, input_array):
+    def _apply_test(self, input_array, variable):
         assert len(input_array) > 0
         for num, value in enumerate(input_array):
             if value != num:
                 return None
-        return Variable("alpha")
+        return Variable(variable)
 
 
 class IsOffsetCountIET(IsCountIET):
@@ -87,10 +89,12 @@ class IsOffsetCountIET(IsCountIET):
     def __init__(self, name=None, **kwargs):
         super().__init__(name or "is_offset_count", **kwargs)
 
-    def _apply_test(self, input_array):
+    def _apply_test(self, input_array, variable):
         assert len(input_array) > 0
         offset = input_array[0]
-        inner = super()._apply_test([val - offset for val in input_array])
+        inner = super()._apply_test(
+            [val - offset for val in input_array], variable=variable
+        )
         if inner:
             return Add(inner, Constant(offset))
         return None
@@ -102,12 +106,14 @@ class IsScaledCountIET(IsCountIET):
     def __init__(self, name=None, **kwargs):
         super().__init__(name or "is_offset_count", **kwargs)
 
-    def _apply_test(self, input_array):
+    def _apply_test(self, input_array, variable):
         assert len(input_array) > 1
         rise = input_array[1] - input_array[0]
         if rise == 0:
             return None
-        inner = super()._apply_test([val / rise for val in input_array])
+        inner = super()._apply_test(
+            [val / rise for val in input_array], variable=variable
+        )
         if inner:
             return Mul(inner, Constant(rise))
         return None

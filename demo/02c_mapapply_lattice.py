@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
+from pathlib import Path
 
 from phoenix.fgen.backends import Config, get_backend
 from phoenix.fgen.instruction import (
