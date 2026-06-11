@@ -531,6 +531,11 @@ class CUDAPyWrapperLibrary(PyWrapperLibraryBase):
             return ctypes.CDLL(str(wrapper_lib))
         return wrapper_lib
 
+    def close(self):
+        """Release CUDA-specific wrapper state before generic teardown."""
+        self._kernel_module = None
+        super().close()
+
     def _load_kernel_module(self):
         if cp is None:
             raise RuntimeError(
@@ -568,6 +573,8 @@ class CUDAPyWrapperLibrary(PyWrapperLibraryBase):
         arguments,
         libroutine,
         *,
+        owner=None,
+        owner_token=None,
         reuse_buffer=False,
     ):
         wrapper_class = (
@@ -578,6 +585,8 @@ class CUDAPyWrapperLibrary(PyWrapperLibraryBase):
             exe=exe,
             arguments=arguments,
             libroutine=libroutine,
+            owner=owner,
+            owner_token=owner_token,
             reuse_buffer=reuse_buffer,
         )
 

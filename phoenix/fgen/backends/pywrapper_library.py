@@ -18,6 +18,7 @@ from __future__ import annotations
 __doc__ = """Generic Python wrapper library infrastructure for generated backends."""
 
 from types import SimpleNamespace
+import weakref
 
 from ...adaa import GenericADAA
 from ..library import Library, LibRoutine
@@ -102,6 +103,8 @@ class WrapperBase:
         arguments,
         libroutine=None,
         *,
+        owner=None,
+        owner_token=None,
         reuse_buffer=False,
         **_,
     ):
@@ -118,9 +121,19 @@ class WrapperBase:
         self._buf_factories = {}
         self._exec = exe
         self._libroutine = libroutine
+        self._owner = owner
+        self._owner_token = owner_token
         self._reuse_buffer = bool(reuse_buffer)
         self._input_slots = {}
         self._return_order = []
+        self._owner_finalizer = None
+        if owner is not None and owner_token is not None:
+            self._owner_finalizer = weakref.finalize(
+                self,
+                type(self)._finalize_owner,
+                weakref.ref(owner),
+                owner_token,
+            )
         self._analyse_arguments(arguments)
 
     def __call__(self, *args, **kwargs):
@@ -133,6 +146,12 @@ class WrapperBase:
     @property
     def argument_specs(self):
         yield from self._argument_specs
+
+    @staticmethod
+    def _finalize_owner(owner_ref, owner_token):
+        owner = owner_ref()
+        if owner is not None:
+            owner.release_wrapper(owner_token)
 
     def _analyse_arguments(self, arguments):
         self._argument_specs = []
@@ -287,7 +306,16 @@ class PyWrapperLibraryBase(Library):
         for dependency in wrapped_library.get_dependencies(recursive=True):
             self._dependencies.add(dependency)
         self._wrapper_lib = wrapper_lib
-        self._wrappers = {}
+        self._wrappers = weakref.WeakValueDictionary()
+        self._wrapper_names_by_token = {}
+        self._wrapper_tokens_by_name = {}
+        self._next_wrapper_token = 0
+        self._closed = False
+        self._close_finalizer = weakref.finalize(
+            self,
+            type(self)._finalize_close,
+            weakref.ref(self),
+        )
 
     @classmethod
     def from_compiled_hash(
@@ -365,6 +393,59 @@ class PyWrapperLibraryBase(Library):
     def wrapper_lib(self):
         return self._wrapper_lib
 
+    @staticmethod
+    def _finalize_close(self_ref):
+        instance = self_ref()
+        if instance is not None:
+            instance.close()
+
+    def close(self):
+        """Release Python-side wrapper state held by this library."""
+        if self._closed:
+            return
+        self._closed = True
+        self._wrappers.clear()
+        self._wrapper_names_by_token.clear()
+        self._wrapper_tokens_by_name.clear()
+        self._wrapper_lib = None
+
+    def _register_wrapper_token(self) -> int:
+        token = self._next_wrapper_token
+        self._next_wrapper_token += 1
+        return token
+
+    def release_wrapper(self, owner_token):
+        """Drop one live wrapper registration and auto-close on last use."""
+        if self._closed:
+            return
+        self._wrappers.pop(owner_token, None)
+        name = self._wrapper_names_by_token.pop(owner_token, None)
+        if name is not None:
+            tokens = self._wrapper_tokens_by_name.get(name)
+            if tokens is not None:
+                tokens.discard(owner_token)
+                if not tokens:
+                    self._wrapper_tokens_by_name.pop(name, None)
+        if not self._wrappers:
+            self.close()
+
+    def register_wrapper(self, name, token, wrapper):
+        """Register one live wrapper under both token and routine name."""
+        self._wrappers[token] = wrapper
+        self._wrapper_names_by_token[token] = name
+        self._wrapper_tokens_by_name.setdefault(name, set()).add(token)
+
+    def get_wrapper(self, name):
+        """Return the most recent live wrapper registered for `name`."""
+        tokens = self._wrapper_tokens_by_name.get(name)
+        if not tokens:
+            raise KeyError(f"wrapper {name!r} is not registered")
+        live_tokens = [token for token in sorted(tokens, reverse=True) if token in self._wrappers]
+        if not live_tokens:
+            self._wrapper_tokens_by_name.pop(name, None)
+            raise KeyError(f"wrapper {name!r} is not registered")
+        return self._wrappers[live_tokens[0]]
+
     def resolve_wrapper_callable(self, libroutine_name, libroutine):
         raise NotImplementedError("must be implemented in subclass")
 
@@ -375,6 +456,8 @@ class PyWrapperLibraryBase(Library):
         arguments,
         libroutine,
         *,
+        owner=None,
+        owner_token=None,
         reuse_buffer=False,
     ):
         return type(self).WRAPPER_CLASS(
@@ -382,6 +465,8 @@ class PyWrapperLibraryBase(Library):
             exe=exe,
             arguments=arguments,
             libroutine=libroutine,
+            owner=owner,
+            owner_token=owner_token,
             reuse_buffer=reuse_buffer,
         )
 
@@ -460,14 +545,17 @@ class PyWrapperLibraryBase(Library):
                     raise ValueError(f"assignment for {src} not found")
 
         routine = self.resolve_wrapper_callable(libroutine_name, libroutine)
+        owner_token = self._register_wrapper_token()
         wrapper = self.create_wrapper_instance(
             libroutine_name,
             routine,
             internally_call_with,
             libroutine,
+            owner=self,
+            owner_token=owner_token,
             reuse_buffer=reuse_buffer,
         )
-        self._wrappers[libroutine_name] = wrapper
+        self.register_wrapper(libroutine_name, owner_token, wrapper)
         return wrapper
 
     def create_direct_wrapper(
@@ -533,12 +621,15 @@ class PyWrapperLibraryBase(Library):
                 internally_call_with.append(("I", arg, logical_name, key, adaa_class))
 
         routine = self.resolve_wrapper_callable(libroutine_name, libroutine)
+        owner_token = self._register_wrapper_token()
         wrapper = self.create_wrapper_instance(
             libroutine_name,
             routine,
             internally_call_with,
             libroutine,
+            owner=self,
+            owner_token=owner_token,
             reuse_buffer=reuse_buffer,
         )
-        self._wrappers[libroutine_name] = wrapper
+        self.register_wrapper(libroutine_name, owner_token, wrapper)
         return wrapper
